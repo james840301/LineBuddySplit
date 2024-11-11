@@ -7,12 +7,13 @@ from linebot.models import MessageEvent, TextMessage, TextSendMessage
 app = Flask(__name__)
 
 # 取得環境變數
-channel_id = os.getenv("LINE_CHANNEL_ID")
-channel_secret = os.getenv("LINE_CHANNEL_SECRET")
+static_tmp_path = os.path.join(os.path.dirname(__file__), 'static', 'tmp')
 
-# 設置 Line API
-line_bot_api = LineBotApi(channel_id)
-handler = WebhookHandler(channel_secret)
+# Channel Access Token
+line_bot_api = LineBotApi(os.getenv('CHANNEL_ACCESS_TOKEN'))
+
+# Channel Secret
+handler = WebhookHandler(os.getenv('CHANNEL_SECRET'))
 
 # 根路由
 @app.route('/')
