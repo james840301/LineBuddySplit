@@ -14,6 +14,11 @@ channel_secret = os.getenv("LINE_CHANNEL_SECRET")
 line_bot_api = LineBotApi(channel_id)
 handler = WebhookHandler(channel_secret)
 
+# 根路由
+@app.route('/')
+def index():
+    return "Hello, world!"
+
 # Webhook 路由
 @app.route("/callback", methods=['POST'])
 def callback():
