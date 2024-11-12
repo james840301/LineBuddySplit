@@ -15,6 +15,12 @@ line_bot_api = LineBotApi(os.getenv('LINE_CHANNEL_ACCESS_TOKEN'))
 # Channel Secret
 handler = WebhookHandler(os.getenv('LINE_CHANNEL_SECRET'))
 
+# 根路由，測試伺服器是否正常
+@app.route('/')
+def index():
+    return "Hello, world!"
+
+# Webhook 路由，處理來自 LINE 的訊息
 @app.route("/callback", methods=['POST'])
 def callback():
     signature = request.headers['X-Line-Signature']
