@@ -34,4 +34,6 @@ def callback():
     return 'OK'
 
 if __name__ == "__main__":
-    app.run(port=8000)
+    # 使用 Render 提供的 PORT 環境變數，如果沒有提供，默認為 10000
+    port = int(os.getenv("PORT", 10000))
+    app.run(host='0.0.0.0', port=port)
