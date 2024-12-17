@@ -1,39 +1,48 @@
-import os
-from flask import Flask, request, abort
+from flask import Flask, request, send_file
 from linebot import LineBotApi, WebhookHandler
-from linebot.exceptions import InvalidSignatureError
+from linebot.exceptions import LineBotApiError, InvalidSignatureError
 from linebot.models import MessageEvent, TextMessage, TextSendMessage
+import os
+from dotenv import load_dotenv
+from message_processor import ExpenseManager
+from expense_chart_generator import ChartGenerator
+import openai
+from user_message_handler import MessageHandler
+
+# 載入環境變數
+load_dotenv()
 
 app = Flask(__name__)
 
-# 取得環境變數
-static_tmp_path = os.path.join(os.path.dirname(__file__), 'static', 'tmp')
+# 初始化 LINE Bot API、Handler、OpenAI
+line_bot_api = LineBotApi(os.getenv("LINE_CHANNEL_ACCESS_TOKEN"))
+handler = WebhookHandler(os.getenv("LINE_CHANNEL_SECRET"))
+openai.api_key = os.getenv("OPENAI_API_KEY")
 
-# Channel Access Token
-line_bot_api = LineBotApi(os.getenv('LINE_CHANNEL_ACCESS_TOKEN'))
+# 使用者上下文與處理器
+user_context = {}
+response_handler = MessageHandler(line_bot_api, user_context)
 
-# Channel Secret
-handler = WebhookHandler(os.getenv('LINE_CHANNEL_SECRET'))
-
-# 根路由，測試伺服器是否正常
-@app.route('/')
-def index():
-    return "Hello, world!"
-
-# Webhook 路由，處理來自 LINE 的訊息
-@app.route("/callback", methods=['POST'])
+@app.route("/callback", methods=["POST"])
 def callback():
-    signature = request.headers['X-Line-Signature']
+    # 接收並處理 LINE Webhook 請求
+    signature = request.headers.get("X-Line-Signature", "")
     body = request.get_data(as_text=True)
-
     try:
         handler.handle(body, signature)
     except InvalidSignatureError:
-        abort(400)
+        return "Invalid signature", 400
+    return "OK", 200
 
-    return 'OK'
+@handler.add(MessageEvent, message=TextMessage)
+def handle_line_message(event):
+    # 處理使用者的文字訊息事件
+    response_handler.handle_message(event)
+
+@app.route('/chart/<filename>')
+def serve_html_chart(filename):
+    # 提供生成的圖表檔案
+    return send_file(filename, mimetype='text/html')
 
 if __name__ == "__main__":
-    # 使用 Render 提供的 PORT 環境變數，如果沒有提供，默認為 10000
-    port = int(os.getenv("PORT", 10000))
-    app.run(host='0.0.0.0', port=port)
+    app.run(debug=True, port=5000)
