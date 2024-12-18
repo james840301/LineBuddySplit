@@ -8,6 +8,9 @@ from message_processor import ExpenseManager
 from expense_chart_generator import ChartGenerator
 import openai
 from user_message_handler import MessageHandler
+import threading
+import time
+import requests
 
 # 載入環境變數
 load_dotenv()
@@ -53,5 +56,22 @@ def serve_chart(filename):
     # 提供生成的 HTML 圖表檔案
     return send_from_directory(STATIC_DIR, filename, mimetype='text/html')
 
+@app.route('/ping')
+def ping():
+    return "pong", 200
+
+def keep_awake():
+    """定時向應用自身發送請求，保持實例活躍"""
+    while True:
+        try:
+            requests.get(f"{BASE_URL}/ping")
+            print(f"Sent keep-alive ping to {BASE_URL}/ping")
+        except Exception as e:
+            print("Error sending keep-alive ping:", e)
+        time.sleep(600)  # 每 10 分鐘發送一次
+
 if __name__ == "__main__":
+    # 啟動喚醒功能
+    threading.Thread(target=keep_awake, daemon=True).start()
+    # 啟動 Flask 應用
     app.run(debug=True, port=5000)
