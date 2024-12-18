@@ -1,11 +1,13 @@
 from linebot.models import TextSendMessage
 from message_processor import ExpenseManager
 from expense_chart_generator import ChartGenerator
+import os
 
 class MessageHandler:
     def __init__(self, line_bot_api, user_context):
         self.line_bot_api = line_bot_api
         self.user_context = user_context
+        self.base_url = os.getenv("BASE_URL", "http://localhost:5000")
 
     def reset_workflow(self, user_id):
         """重置使用者的整個分帳流程狀態"""
@@ -114,11 +116,11 @@ class MessageHandler:
             result = processor.calculate_and_format()
             summary_data = processor.get_summary()
             chart_generator = ChartGenerator(summary_data)
-            chart_generator.generate_charts(output_dir=".")  # 本機生成，不直接使用本機路徑
+            chart_path = chart_generator.generate_charts(output_dir="static/charts")
             context["step"] += 1
 
             # 使用可公開存取的 URL
-            context["chart_path"] = "https://0b08-111-250-52-139.ngrok-free.app/chart/separate_charts.html"
+            context["chart_path"] = f"{self.base_url}/chart/{os.path.basename(chart_path)}"
 
             return f"計算結果如下：\n{result}"
 

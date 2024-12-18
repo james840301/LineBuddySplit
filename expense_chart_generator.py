@@ -181,7 +181,7 @@ class ChartGenerator:
         )
         return fig.to_html(**self.to_html_params)
 
-    def generate_charts(self, output_dir="."):
+    def generate_charts(self, output_dir="static/charts"):
         """
         組合所有圖表為單一 HTML 檔案並輸出。
         """
@@ -212,31 +212,12 @@ class ChartGenerator:
         </html>
         """
 
-        html_path = os.path.join(output_dir, "separate_charts.html")
-        with open(html_path, 'w', encoding='utf-8') as f:
+        # 確保輸出目錄存在
+        os.makedirs(output_dir, exist_ok=True)
+
+        # 儲存到指定路徑
+        chart_path = os.path.join(output_dir, "separate_charts.html")
+        with open(chart_path, "w", encoding="utf-8") as f:
             f.write(full_html)
 
-        return html_path
-    
-    # 測試資料輸入
-    members_input = "政軒、卓卓、欣河、庭宇、孟涵、亞豬豬、昇哥、小珍珠"
-    payments_input = """
-    政軒付了400元火鍋
-    卓卓付了300元飲料
-    欣河付了600元電影
-    庭宇付了500元聚餐
-    孟涵付了200元咖啡
-    亞豬豬付了700元住宿
-    昇哥付了300元門票
-    小珍珠付了400元零食
-    """
-    splits_input = """
-    火鍋沒庭宇、孟涵
-    飲料沒政軒、小珍珠
-    電影沒亞豬豬、昇哥
-    聚餐沒欣河、卓卓
-    咖啡沒亞豬豬、昇哥、小珍珠
-    住宿沒孟涵、卓卓
-    門票沒庭宇、欣河
-    零食沒政軒、卓卓、孟涵
-    """
+        return chart_path
