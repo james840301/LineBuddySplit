@@ -30,8 +30,14 @@ class MessageHandler:
             self.line_bot_api.reply_message(
                 event.reply_token,
                 TextSendMessage(
-                    text="流程已重置，請重新開始。\n嗨！我是您的記帳助手卓波 (=^･ω･^=)\n"
-                         "請輸入成員名單（例如：Alice、Bob、Charlie）。"
+                    text=(
+                        "流程已重置！\n"
+                        "請重新開始。\n\n"
+                        "嗨！我是您的記帳助手\n"
+                        "卓波 (=^･ω･^=)\n"
+                        "請輸入成員名單\n"
+                        "（例如：卓波、野獸、柿子）。"
+                    )
                 )
             )
             return
@@ -61,7 +67,7 @@ class MessageHandler:
 
         except Exception as e:
             # 若發生例外，回覆錯誤訊息
-            response_message = f"發生錯誤：{str(e)}，請重新輸入。"
+            response_message = f"發生錯誤：{str(e)}\n請重新輸入。"
 
         # 回覆使用者訊息
         self.line_bot_api.reply_message(
@@ -73,16 +79,26 @@ class MessageHandler:
         if context.get("step") == 5 and "chart_path" in context:
             self.line_bot_api.push_message(
                 user_id,
-                TextSendMessage(text=f"圖表生成完畢！您可以從以下連結查看圖表：\n{context['chart_path']}")
+                TextSendMessage(
+                    text=(
+                        "圖表生成完畢！\n"
+                        "您可以從以下連結查看：\n"
+                        f"{context['chart_path']}"
+                    )
+                )
             )
             self.reset_workflow(user_id)
 
     def welcome_user(self, context):
         """引導使用者輸入成員名單"""
         context["step"] += 1
-        return ("嗨！我是您的記帳助手卓波 (=^･ω･^=)\n"
-                "我會幫您處理分帳問題！\n"
-                "請輸入成員名單（例如：Alice、Bob、Charlie）。")
+        return (
+            "嗨！我是您的記帳助手\n"
+            "卓波 (=^･ω･^=)\n\n"
+            "我會幫您處理分帳問題！\n\n"
+            "請輸入成員名單\n"
+            "（例如：卓波、野獸、柿子）。"
+        )
 
     def handle_input(self, context, user_message=None, event=None):
         """依據不同的流程階段處理使用者輸入"""
@@ -95,21 +111,30 @@ class MessageHandler:
             members = user_message.split("、")
             processor.process_members(user_message)
             context["confirmation"] = True
-            return f"成員名單為：{'、'.join(members)}\n請確認是否正確？（是/否）"
+            return (
+                f"成員名單為：\n{'、'.join(members)}\n"
+                "請確認是否正確？（是/否）"
+            )
 
         elif step == 2:
             # 付款記錄確認
             context["data"] = user_message
             processor.process_payments(user_message)
             context["confirmation"] = True
-            return f"付款記錄為：\n{user_message}\n請確認是否正確？（是/否）"
+            return (
+                f"付款記錄為：\n{user_message}\n"
+                "請確認是否正確？（是/否）"
+            )
 
         elif step == 3:
             # 分攤情況確認
             context["data"] = user_message
             processor.process_splits(user_message)
             context["confirmation"] = True
-            return f"分攤情況為：\n{user_message}\n請確認是否正確？（是/否）"
+            return (
+                f"分攤情況為：\n{user_message}\n"
+                "請確認是否正確？（是/否）"
+            )
 
         elif step == 4:
             # 計算與圖表生成
@@ -122,11 +147,14 @@ class MessageHandler:
             # 使用可公開存取的 URL
             context["chart_path"] = f"{self.base_url}/chart/{os.path.basename(chart_path)}"
 
-            return f"計算結果如下：\n{result}"
+            return (
+                "計算結果如下：\n"
+                f"{result}"
+            )
 
         else:
             # 非預期的步驟
-            return "無效的步驟，請重新開始流程。"
+            return "無效的步驟，請輸入'重置'重新開始。"
 
     def handle_confirmation(self, context, user_message, event):
         """處理使用者對於成員、付款記錄、分攤情況的確認 (是/否)"""
@@ -138,9 +166,22 @@ class MessageHandler:
             context["confirmation"] = False
             context["step"] += 1
             if context["step"] == 2:
-                return "請輸入付款記錄（例如：Alice付了1000元晚餐）。多筆記錄請換行。"
+                return (
+                    "請輸入付款記錄\n"
+                    "格式:[成員]付了[金額]元[項目]\n"
+                    "（例如：卓波付了1000元晚餐）。\n"
+                    "多筆記錄請換行。"
+                )
             elif context["step"] == 3:
-                return "請輸入分攤情況（例如：晚餐沒Alice、Bob）。多筆記錄請換行。"
+                return (
+                    "請輸入分攤情況\n"
+                    "格式:[項目]沒[成員(可填複數)]\n"
+                    "（例如：晚餐沒卓波、野獸）。\n"
+                    "多筆記錄請換行。\n\n"
+                    "ps.這邊只記錄沒有要分的\n"
+                    "若都要分則不用特別打"
+                    
+                )
             elif context["step"] == 4:
                 # 第四步直接呼叫 handle_input 觸發計算
                 return self.handle_input(context=context, user_message="", event=event)
@@ -149,7 +190,10 @@ class MessageHandler:
             # 使用者不確認正確，請重新輸入
             context["confirmation"] = False
             if step == 1:
-                return "請重新輸入成員名單（例如：Alice、Bob、Charlie）。"
+                return (
+                    "請重新輸入成員名單\n"
+                    "（例如：卓波、野獸、柿子）。"
+                )
             elif step == 2:
                 return "請重新輸入付款記錄。"
             elif step == 3:
@@ -157,4 +201,4 @@ class MessageHandler:
 
         else:
             # 非預期輸入，提示使用者輸入「是」或「否」
-            return "請輸入 '是' 或 '否' 來確認資料是否正確。"
+            return "請輸入 '是' 或 '否'\n來確認資料是否正確。"
