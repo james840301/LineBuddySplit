@@ -58,14 +58,15 @@ def serve_chart(filename):
 
 @app.route('/ping')
 def ping():
+    print("Ping endpoint was hit!")  # 用於測試是否有成功觸發
     return "pong", 200
 
 def keep_awake():
     """定時向應用自身發送請求，保持實例活躍"""
     while True:
         try:
-            requests.get(f"{BASE_URL}/ping")
-            print(f"Sent keep-alive ping to {BASE_URL}/ping")
+            response = requests.get(f"{BASE_URL}/ping", timeout=10)
+            print(f"Sent keep-alive ping to {BASE_URL}/ping - Response: {response.status_code}")
         except Exception as e:
             print("Error sending keep-alive ping:", e)
         time.sleep(600)  # 每 10 分鐘發送一次
